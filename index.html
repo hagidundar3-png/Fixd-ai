@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FİX-D AI Interface</title>
+    <!-- Google Fonts & FontAwesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-primary: #0b0c10;
+            --bg-secondary: #12141c;
+            --bg-sidebar: #07080b;
+            --bg-glass: rgba(18, 20, 28, 0.85);
+            --border-glass: rgba(255, 255, 255, 0.08);
+            
+            --accent-primary: #8a2be2;
+            --accent-secondary: #00f0ff;
+            --accent-gradient: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+
+            --user-msg-bg: linear-gradient(135deg, #6366f1, #8b5cf6);
+            --ai-msg-bg: rgba(30, 41, 59, 0.85);
+            
+            --sidebar-width: 260px;
+            --header-height: 60px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            overflow: hidden;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+
+        /* App Container Layout Fixed */
+        .app-container {
+            display: flex;
+            width: 100vw;
+            height: 100dvh; /* Dynamic Viewport Height for mobile browsers */
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-glass);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.3s ease;
+            z-index: 100;
+        }
+
+        .sidebar-header { padding: 15px; }
+
+        .btn-new-chat {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent-gradient);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(138, 43, 226, 0.3);
+        }
+
+        .chat-history {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 15px;
+        }
+
+        .sidebar-user {
+            padding: 15px;
+            border-top: 1px solid var(--border-glass);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+        }
+
+        .user-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background: var(--bg-primary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .top-bar {
+            height: var(--header-height);
+            min-height: var(--header-height);
+            border-bottom: 1px solid var(--border-glass);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .mode-selector {
+            display: flex;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 3px;
+            border-radius: 8px;
+            border: 1px solid var(--border-glass);
+        }
+
+        .mode-btn {
+            padding: 5px 10px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .mode-btn.active {
+            background: var(--accent-primary);
+            color: white;
+            font-weight: 600;
+        }
+
+        .btn-icon {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+        }
+
+        /* Chat Body */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            scroll-behavior: smooth;
+        }
+
+        .welcome-screen {
+            margin: auto;
+            text-align: center;
+            max-width: 90%;
+            opacity: 0.8;
+        }
+
+        .welcome-logo {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .message {
+            display: flex;
+            gap: 10px;
+            max-width: 85%;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            margin-left: auto;
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar { background: var(--user-msg-bg); }
+        .message.ai .message-avatar { background: var(--accent-gradient); }
+
+        .message-content {
+            background: var(--ai-msg-bg);
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border-glass);
+            font-size: 0.9rem;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .message.user .message-content {
+            background: var(--user-msg-bg);
+            border: none;
+            border-bottom-right-radius: 2px;
+        }
+
+        .message.ai .message-content {
+            border-bottom-left-radius: 2px;
+        }
+
+        /* Fixed Input Area for Mobile Keyboard */
+        .input-container {
+            padding: 10px 15px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border-glass);
+            position: relative;
+            bottom: 0;
+            width: 100%;
+        }
+
+        .composer {
+            display: flex;
+            align-items: center;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            padding: 6px 10px;
+            gap: 8px;
+        }
+
+        .composer:focus-within {
+            border-color: var(--accent-primary);
+        }
+
+        .composer textarea {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            resize: none;
+            max-height: 100px;
+            outline: none;
+            height: 24px;
+            line-height: 24px;
+        }
+
+        .btn-send {
+            background: var(--accent-gradient);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            width: 90%;
+            max-width: 400px;
+            border-radius: 16px;
+            border: 1px solid var(--border-glass);
+            padding: 20px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: absolute;
+                height: 100%;
+                transform: translateX(-100%);
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- SOL SIDEBAR -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <button class="btn-new-chat" id="btn-new-chat">
+                    <i class="fa-solid fa-plus"></i> Yeni Sohbet
+                </button>
+            </div>
+
+            <div class="chat-history" id="chat-history"></div>
+
+            <div class="sidebar-user">
+                <div class="user-avatar">F</div>
+                <div>
+                    <div style="font-weight: 600;">Geliştirici Profil</div>
+                    <div style="color: var(--text-muted); font-size: 0.75rem;">FİX-D Local Host</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ANA CHAT ALANI -->
+        <div class="main-content">
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <button class="btn-icon" id="btn-toggle-sidebar">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <div class="logo">FİX-D</div>
+                </div>
+
+                <div class="mode-selector">
+                    <button class="mode-btn active" id="mode-ind" onclick="setMode('independent')">Independent AI</button>
+                    <button class="mode-btn" id="mode-hyb" onclick="setMode('hybrid')">Hybrid AI</button>
+                </div>
+
+                <button class="btn-icon" id="btn-open-settings">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+            </div>
+
+            <!-- CHAT MESAJLARI -->
+            <div class="chat-container" id="chat-container">
+                <div class="welcome-screen" id="welcome-screen">
+                    <div class="welcome-logo">FİX-D</div>
+                    <h2>Hoş Geldin, Kanka!</h2>
+                    <p style="margin-top: 8px; color: var(--text-muted); font-size: 0.85rem;">
+                        Modelin hazır. Mesaj yazdığında doğrudan Ngrok tüneli üzerinden sistemine iletilecek.
+                    </p>
+                </div>
+            </div>
+
+            <!-- MESAJ GİRİŞ ALANI -->
+            <div class="input-container">
+                <div class="composer">
+                    <textarea id="chat-input" rows="1" placeholder="FİX-D modeline yaz..."></textarea>
+                    <button class="btn-send" id="btn-send">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AYARLAR MODALI -->
+    <div class="modal" id="settings-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Ayarlar</h3>
+                <button class="btn-icon" id="btn-close-settings"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="setting-row">
+                <span>Sohbet Geçmişini Temizle</span>
+                <button style="background: #ef4444; border:none; color:white; padding:6px 12px; border-radius:6px; cursor:pointer;" onclick="clearAllHistory()">Temizle</button>
+            </div>
+            <div class="setting-row" style="font-size: 0.8rem; color: var(--text-muted); flex-direction:column; align-items:flex-start; gap:5px;">
+                <div>Sürüm: FİX-D v1.0</div>
+                <div>Tünel: <span style="color: #4ade80;">Aktif</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT BAĞLANTI VE SİSTEM MİMARİSİ -->
+    <script>
+        const FIXD_CONFIG = {
+            endpoint: "https://customs-synergy-astute.ngrok-free.dev"
+        };
+
+        let currentMode = 'independent';
+        const chatContainer = document.getElementById('chat-container');
+        const chatInput = document.getElementById('chat-input');
+        const btnSend = document.getElementById('btn-send');
+        const welcomeScreen = document.getElementById('welcome-screen');
+
+        // Sidebar Toggle
+        document.getElementById('btn-toggle-sidebar').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('open');
+        });
+
+        // Settings Modal
+        const modal = document.getElementById('settings-modal');
+        document.getElementById('btn-open-settings').onclick = () => modal.style.display = 'flex';
+        document.getElementById('btn-close-settings').onclick = () => modal.style.display = 'none';
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('mode-ind').classList.toggle('active', mode === 'independent');
+            document.getElementById('mode-hyb').classList.toggle('active', mode === 'hybrid');
+        }
+
+        function appendMessage(text, sender) {
+            if (welcomeScreen) welcomeScreen.style.display = 'none';
+            
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${sender}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.innerText = sender === 'user' ? 'F' : 'AI';
+            
+            const content = document.createElement('div');
+            content.className = 'message-content';
+            content.innerText = text;
+            
+            msgDiv.appendChild(avatar);
+            msgDiv.appendChild(content);
+            chatContainer.appendChild(msgDiv);
+            
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return content;
+        }
+
+        async function sendMessage() {
+            const text = chatInput.value.trim();
+            if (!text) return;
+
+            appendMessage(text, 'user');
+            chatInput.value = '';
+            chatInput.style.height = '24px';
+
+            const aiContent = appendMessage("Düşünüyor...", 'ai');
+
+            try {
+                const response = await fetch(`${FIXD_CONFIG.endpoint}/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true'
+                    },
+                    body: JSON.stringify({ prompt: text, mode: currentMode })
+                });
+
+                if (!response.ok) throw new Error('Sunucu hatası');
+                
+                const data = await response.json();
+                aiContent.innerText = data.response || data.text || "Yanıt alınamadı.";
+            } catch (err) {
+                console.error(err);
+                aiContent.innerText = "Hata: Colab/Ngrok tüneline bağlanılamadı. Tünelin açık olduğundan emin ol!";
+            }
+        }
+
+        btnSend.addEventListener('click', sendMessage);
+
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Dynamic Textarea Auto-Resize
+        chatInput.addEventListener('input', function() {
+            this.style.height = '24px';
+            this.style.height = (this.scrollHeight < 100 ? this.scrollHeight : 100) + 'px';
+        });
+
+        function clearAllHistory() {
+            chatContainer.innerHTML = '';
+            modal.style.display = 'none';
+        }
+    </script>
+</body>
+          </html>
+          
